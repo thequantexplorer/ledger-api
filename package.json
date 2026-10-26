@@ -1,0 +1,17 @@
+{
+  "name": "ledger-api",
+  "version": "0.3.0",
+  "private": true,
+  "description": "Ledger: invoicing API for small teams",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "seed": "node scripts/seed.js",
+    "test": "node --test test/*.test.js"
+  },
+  "engines": { "node": ">=22.13" },
+  "dependencies": {
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2"
+  }
+}

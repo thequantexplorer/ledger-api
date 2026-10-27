@@ -5,7 +5,11 @@ const { requireUser, requireMember, requireRole } = require('../lib/auth');
 const router = express.Router();
 router.use(requireUser);
 
-const DEFAULT_SORT = 'created_at DESC';
+const SORT_COLUMNS = {
+  created_at: 'created_at DESC',
+  amount_cents: 'amount_cents DESC',
+  number: 'number',
+};
 
 router.get('/', (req, res) => {
   const workspaces = db
@@ -18,15 +22,21 @@ router.get('/', (req, res) => {
 
 // List invoices with optional filters: ?status=paid&customer=acme&sort=amount_cents
 router.get('/:workspaceId/invoices', requireMember, (req, res) => {
-  const { status, customer, sort = DEFAULT_SORT } = req.query;
+  const { status, customer, sort = 'created_at' } = req.query;
+  if (typeof sort !== 'string' || !Object.hasOwn(SORT_COLUMNS, sort)) {
+    return res.status(400).json({ error: `sort must be one of: ${Object.keys(SORT_COLUMNS).join(', ')}` });
+  }
   let sql = 'SELECT id, number, customer, amount_cents, status, created_at FROM invoices WHERE workspace_id = ?';
   const params = [Number(req.params.workspaceId)];
   if (status) {
     sql += ' AND status = ?';
     params.push(status);
   }
-  if (customer) sql += ` AND customer LIKE '%${customer}%'`;
-  sql += ` ORDER BY ${sort}`;
+  if (customer) {
+    sql += ' AND customer LIKE ?';
+    params.push(`%${customer}%`);
+  }
+  sql += ` ORDER BY ${SORT_COLUMNS[sort]}`;
   res.json({ invoices: db.prepare(sql).all(...params) });
 });
 

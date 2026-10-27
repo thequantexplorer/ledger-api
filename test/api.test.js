@@ -46,6 +46,44 @@ test('invoices can be filtered by status', async () => {
   assert.deepStrictEqual(invoices.map(i => i.number), ['NW-1001']);
 });
 
+test('customer filter matches by substring', async () => {
+  const token = await login('maya@northwind.test', 'maya-demo-pw');
+  const all = (await (await get('/api/workspaces/1/invoices', token)).json()).invoices;
+  const needle = all[0].customer.slice(1, 4);
+  const r = await get(`/api/workspaces/1/invoices?customer=${encodeURIComponent(needle)}`, token);
+  assert.strictEqual(r.status, 200);
+  const { invoices } = await r.json();
+  assert.ok(invoices.length > 0);
+  assert.ok(invoices.every(i => i.customer.includes(needle)));
+});
+
+test('customer filter is not injectable', async () => {
+  const token = await login('maya@northwind.test', 'maya-demo-pw');
+  for (const customer of ["x'", "x' OR '1'='1", "x' UNION SELECT id,email,name,0,password_hash,0 FROM users--"]) {
+    const r = await get(`/api/workspaces/1/invoices?customer=${encodeURIComponent(customer)}`, token);
+    assert.strictEqual(r.status, 200);
+    assert.deepStrictEqual((await r.json()).invoices, []);
+  }
+});
+
+test('invoices can be sorted by an allowed column', async () => {
+  const token = await login('maya@northwind.test', 'maya-demo-pw');
+  const r = await get('/api/workspaces/1/invoices?sort=amount_cents', token);
+  assert.strictEqual(r.status, 200);
+  const amounts = (await r.json()).invoices.map(i => i.amount_cents);
+  assert.deepStrictEqual(amounts, [...amounts].sort((a, b) => b - a));
+});
+
+test('unknown sort values are rejected', async () => {
+  const token = await login('maya@northwind.test', 'maya-demo-pw');
+  for (const sort of ['(SELECT password_hash FROM users)', 'created_at DESC', 'constructor']) {
+    const r = await get(`/api/workspaces/1/invoices?sort=${encodeURIComponent(sort)}`, token);
+    assert.strictEqual(r.status, 400);
+  }
+  const r = await get('/api/workspaces/1/invoices?sort=number&sort=amount_cents', token);
+  assert.strictEqual(r.status, 400);
+});
+
 test('non-members cannot list another workspace', async () => {
   const token = await login('lena@brightside.test', 'lena-demo-pw');
   const r = await get('/api/workspaces/1/invoices', token);

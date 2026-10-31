@@ -11,6 +11,13 @@ router.get('/summary', requireUser, requireMember, (req, res) => {
   res.json({ summary: rows });
 });
 
+router.get('/overdue', requireUser, requireMember, (req, res) => {
+  const rows = db
+    .prepare("SELECT id, number, customer, amount_cents, status, created_at FROM invoices WHERE workspace_id = ? AND status = 'sent' AND created_at < datetime('now', '-30 days') ORDER BY created_at")
+    .all(Number(req.params.workspaceId));
+  res.json({ overdue: rows });
+});
+
 // CSV export for the finance team's bookkeeping import.
 router.get('/export.csv', (req, res) => {
   const rows = db

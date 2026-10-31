@@ -46,6 +46,17 @@ test('invoices can be filtered by status', async () => {
   assert.deepStrictEqual(invoices.map(i => i.number), ['NW-1001']);
 });
 
+test('overdue report lists sent invoices older than 30 days, oldest first', async () => {
+  const { db } = require('../src/lib/db');
+  const insert = db.prepare("INSERT INTO invoices (workspace_id, number, customer, customer_email, amount_cents, status, created_at) VALUES (1, ?, 'Old Co', 'old@co.test', 1000, ?, datetime('now', ?))");
+  insert.run('NW-OLD1', 'sent', '-45 days');
+  insert.run('NW-OLD2', 'sent', '-60 days');
+  insert.run('NW-PAID-OLD', 'paid', '-90 days');
+  const token = await login('maya@northwind.test', 'maya-demo-pw');
+  const { overdue } = await (await get('/api/workspaces/1/reports/overdue', token)).json();
+  assert.deepStrictEqual(overdue.map(i => i.number), ['NW-OLD2', 'NW-OLD1']);
+});
+
 test('non-members cannot list another workspace', async () => {
   const token = await login('lena@brightside.test', 'lena-demo-pw');
   const r = await get('/api/workspaces/1/invoices', token);

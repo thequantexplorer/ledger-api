@@ -46,6 +46,18 @@ test('invoices can be filtered by status', async () => {
   assert.deepStrictEqual(invoices.map(i => i.number), ['NW-1001']);
 });
 
+test('invoices can be filtered by min_amount (inclusive, cents)', async () => {
+  const token = await login('maya@northwind.test', 'maya-demo-pw');
+  const { invoices } = await (await get('/api/workspaces/1/invoices?min_amount=185000&sort=amount_cents', token)).json();
+  assert.deepStrictEqual(invoices.map(i => i.number), ['NW-1002', 'NW-1001']);
+});
+
+test('invalid min_amount is rejected', async () => {
+  const token = await login('maya@northwind.test', 'maya-demo-pw');
+  const r = await get('/api/workspaces/1/invoices?min_amount=abc', token);
+  assert.strictEqual(r.status, 400);
+});
+
 test('non-members cannot list another workspace', async () => {
   const token = await login('lena@brightside.test', 'lena-demo-pw');
   const r = await get('/api/workspaces/1/invoices', token);

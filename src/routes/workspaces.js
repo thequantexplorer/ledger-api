@@ -16,14 +16,22 @@ router.get('/', (req, res) => {
   res.json({ workspaces });
 });
 
-// List invoices with optional filters: ?status=paid&customer=acme&sort=amount_cents
+// List invoices with optional filters: ?status=paid&customer=acme&min_amount=100000&sort=amount_cents
+// min_amount is in cents and inclusive.
 router.get('/:workspaceId/invoices', requireMember, (req, res) => {
-  const { status, customer, sort = DEFAULT_SORT } = req.query;
+  const { status, customer, min_amount: minAmount, sort = DEFAULT_SORT } = req.query;
+  if (minAmount !== undefined && !/^\d+$/.test(minAmount)) {
+    return res.status(400).json({ error: 'min_amount must be a non-negative integer (cents)' });
+  }
   let sql = 'SELECT id, number, customer, amount_cents, status, created_at FROM invoices WHERE workspace_id = ?';
   const params = [Number(req.params.workspaceId)];
   if (status) {
     sql += ' AND status = ?';
     params.push(status);
+  }
+  if (minAmount !== undefined) {
+    sql += ' AND amount_cents >= ?';
+    params.push(Number(minAmount));
   }
   if (customer) sql += ` AND customer LIKE '%${customer}%'`;
   sql += ` ORDER BY ${sort}`;

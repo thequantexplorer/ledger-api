@@ -30,7 +30,7 @@ Then call the API with `Authorization: Bearer <token>`.
 | GET | `/api/workspaces/:id/invoices` | filters: `status`, `customer`, `sort` |
 | POST | `/api/workspaces/:id/invoices` | create a draft invoice |
 | POST | `/api/workspaces/:id/members` | owners and admins add members |
-| GET | `/api/workspaces/:id/reports/summary` | totals by status |
+| GET | `/api/workspaces/:id/reports/summary` | totals by status, plus `overdue_count` (sent > 30 days) |
 | GET | `/api/workspaces/:id/reports/export.csv` | CSV for bookkeeping |
 | GET / PATCH | `/api/invoices/:id` | read or change an invoice's status |
 

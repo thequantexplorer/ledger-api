@@ -8,7 +8,10 @@ router.get('/summary', requireUser, requireMember, (req, res) => {
   const rows = db
     .prepare('SELECT status, COUNT(*) AS count, SUM(amount_cents) AS total_cents FROM invoices WHERE workspace_id = ? GROUP BY status')
     .all(Number(req.params.workspaceId));
-  res.json({ summary: rows });
+  const { count } = db
+    .prepare("SELECT COUNT(*) AS count FROM invoices WHERE workspace_id = ? AND status = 'sent' AND created_at < datetime('now', '-30 days')")
+    .get(Number(req.params.workspaceId));
+  res.json({ summary: rows, overdue_count: count });
 });
 
 // CSV export for the finance team's bookkeeping import.

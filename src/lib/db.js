@@ -32,8 +32,12 @@ db.exec(`
     customer_email TEXT NOT NULL,
     amount_cents INTEGER NOT NULL,
     status TEXT NOT NULL DEFAULT 'draft',
+    due_date TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 `);
+
+const invoiceColumns = db.prepare('PRAGMA table_info(invoices)').all().map(c => c.name);
+if (!invoiceColumns.includes('due_date')) db.exec('ALTER TABLE invoices ADD COLUMN due_date TEXT');
 
 module.exports = { db };

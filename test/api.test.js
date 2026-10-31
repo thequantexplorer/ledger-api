@@ -46,6 +46,23 @@ test('invoices can be filtered by status', async () => {
   assert.deepStrictEqual(invoices.map(i => i.number), ['NW-1001']);
 });
 
+test('invoices can be filtered by due_before', async () => {
+  const token = await login('maya@northwind.test', 'maya-demo-pw');
+  const list = async qs => (await (await get(`/api/workspaces/1/invoices?${qs}`, token)).json()).invoices.map(i => i.number).sort();
+  assert.deepStrictEqual(await list('due_before=2026-11-01'), ['NW-1001']);
+  assert.deepStrictEqual(await list('due_before=2026-11-15'), ['NW-1001']);
+  assert.deepStrictEqual(await list('due_before=2026-11-16'), ['NW-1001', 'NW-1002']);
+  assert.deepStrictEqual(await list('due_before=2026-12-01&status=sent'), ['NW-1002']);
+});
+
+test('due_before rejects values that are not YYYY-MM-DD dates', async () => {
+  const token = await login('maya@northwind.test', 'maya-demo-pw');
+  for (const bad of ['tomorrow', '2026-13-01', '2026-02-30', "2026-11-01' OR 1=1 --"]) {
+    const r = await get(`/api/workspaces/1/invoices?due_before=${encodeURIComponent(bad)}`, token);
+    assert.strictEqual(r.status, 400, bad);
+  }
+});
+
 test('non-members cannot list another workspace', async () => {
   const token = await login('lena@brightside.test', 'lena-demo-pw');
   const r = await get('/api/workspaces/1/invoices', token);

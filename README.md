@@ -27,8 +27,8 @@ Then call the API with `Authorization: Bearer <token>`.
 | --- | --- | --- |
 | POST | `/api/auth/login` | email + password → token |
 | GET | `/api/workspaces` | workspaces you belong to |
-| GET | `/api/workspaces/:id/invoices` | filters: `status`, `customer`, `sort` |
-| POST | `/api/workspaces/:id/invoices` | create a draft invoice |
+| GET | `/api/workspaces/:id/invoices` | filters: `status`, `customer`, `due_before` (YYYY-MM-DD, exclusive), `sort` |
+| POST | `/api/workspaces/:id/invoices` | create a draft invoice (optional `due_date`, YYYY-MM-DD) |
 | POST | `/api/workspaces/:id/members` | owners and admins add members |
 | GET | `/api/workspaces/:id/reports/summary` | totals by status |
 | GET | `/api/workspaces/:id/reports/export.csv` | CSV for bookkeeping |

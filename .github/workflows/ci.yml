@@ -13,4 +13,22 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm test
+      - name: Test with coverage
+        run: >-
+          node --test --experimental-test-coverage --test-coverage-exclude='test/**'
+          --test-reporter=spec --test-reporter-destination=stdout
+          --test-reporter=spec --test-reporter-destination=coverage.txt
+          --test-reporter=lcov --test-reporter-destination=lcov.info
+          test/*.test.js
+      - name: Coverage summary
+        if: always()
+        run: |
+          echo '### Coverage' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          sed -n '/start of coverage report/,/end of coverage report/p' coverage.txt | sed 's/^ℹ //' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-lcov
+          path: lcov.info

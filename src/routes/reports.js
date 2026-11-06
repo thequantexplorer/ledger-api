@@ -1,10 +1,12 @@
 const express = require('express');
 const { db } = require('../lib/db');
-const { requireUser, requireMember, requireRole } = require('../lib/auth');
+const { requireUser, requireMember } = require('../lib/auth');
 
 const router = express.Router({ mergeParams: true });
 
-router.get('/summary', requireUser, requireMember, (req, res) => {
+router.use(requireUser, requireMember);
+
+router.get('/summary', (req, res) => {
   const rows = db
     .prepare('SELECT status, COUNT(*) AS count, SUM(amount_cents) AS total_cents FROM invoices WHERE workspace_id = ? GROUP BY status')
     .all(Number(req.params.workspaceId));

@@ -71,3 +71,22 @@ test('members cannot void invoices', async () => {
   });
   assert.strictEqual(r.status, 403);
 });
+
+test('CSV export requires authentication', async () => {
+  const r = await get('/api/workspaces/1/reports/export.csv');
+  assert.strictEqual(r.status, 401);
+});
+
+test('non-members cannot export another workspace', async () => {
+  const token = await login('lena@brightside.test', 'lena-demo-pw');
+  const r = await get('/api/workspaces/1/reports/export.csv', token);
+  assert.strictEqual(r.status, 404);
+});
+
+test('members can export their workspace as CSV', async () => {
+  const token = await login('maya@northwind.test', 'maya-demo-pw');
+  const r = await get('/api/workspaces/1/reports/export.csv', token);
+  assert.strictEqual(r.status, 200);
+  assert.match(r.headers.get('content-type'), /text\/csv/);
+  assert.match(await r.text(), /NW-1001/);
+});
